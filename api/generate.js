@@ -15,33 +15,30 @@ function containsBannedWords(text, bannedWords) {
 
 module.exports = async function handler(req, res) {
   // 簡易 GET 支援，方便用網址測試：/api/generate?module=comfort
-  let method = req.method || 'POST';
-  let incomingModule;
-  if (method === 'GET' && req.url) {
-    try {
-      const u = new URL(req.url, `http://${req.headers.host}`);
-      incomingModule = u.searchParams.get('module');
-    } catch {}
+  let mod = undefined;
+  try {
+    if (req.method === 'GET' && req.url) {
+      const u = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+      mod = u.searchParams.get('module');
+    } else if (req.body && typeof req.body === 'object') {
+      mod = req.body.module;
+    }
+  } catch (e) {
+    console.warn('parse module from request failed:', e);
   }
 
   try {
-    const { module } = req.body || {};
-    if (!module || !FALLBACKS[module]) {
-      // 若 GET 傳入 query，就用它
-      if (incomingModule && FALLBACKS[incomingModule]) {
-        req.body = { module: incomingModule };
-      } else if (!module) {
-        return res.status(400).json({ error: 'Invalid or missing module type' });
-      }
+    if (!mod || !FALLBACKS[mod]) {
+      return res.status(400).json({ error: 'Invalid or missing module type' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.warn('GEMINI_API_KEY is not set. Using fallback data.');
-      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (no key)' });
+      return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (no key)' });
     }
 
-    const prompt = buildPrompt(module);
+    const prompt = buildPrompt(mod);
     const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
 
     const response = await fetch(url, {
@@ -65,7 +62,7 @@ module.exports = async function handler(req, res) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error:', response.status, errorText);
-      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (api error)', error: errorText });
+      return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (api error)', error: errorText });
     }
 
     const payload = await response.json();
@@ -74,7 +71,7 @@ module.exports = async function handler(req, res) {
     const blockReason = payload?.promptFeedback?.blockReason || payload?.promptFeedback?.blocked;
     if (blockReason) {
       console.warn('Gemini blocked:', blockReason);
-      return res.status(200).json({ module, data: pickFallback(module), source: `fallback (blocked: ${blockReason})` });
+      return res.status(200).json({ module: mod, data: pickFallback(mod), source: `fallback (blocked: ${blockReason})` });
     }
 
     const parts = payload?.candidates?.[0]?.content?.parts || [];
@@ -82,7 +79,7 @@ module.exports = async function handler(req, res) {
 
     if (!text) {
       // 若 API 有回傳但抓不到 text，回傳原始 payload 片段以便偵錯
-      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (no text from gemini)', error: JSON.stringify(payload) });
+      return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (no text from gemini)', error: JSON.stringify(payload) });
     }
 
     // Basic content filter
@@ -113,17 +110,16 @@ module.exports = async function handler(req, res) {
     const bannedKeywords = ["自殘", "違法", "酒駕", "自殺"];
     if (containsBannedWords(JSON.stringify(data), bannedKeywords)) {
       console.warn('Filtered response due to banned keywords.');
-      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (filtered)' });
+      return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered)' });
     }
 
     // 標示明確為來自 gemini（即便是 raw）
-    res.status(200).json({ module, data, source: 'gemini' });
+    res.status(200).json({ module: mod, data, source: 'gemini' });
 
   } catch (err) {
     console.error('Internal server error:', err);
     // In case of any unexpected error, return a fallback.
-    // We try to get the module from the body, but it might not be there if parsing failed.
-    const module = req.body?.module || 'comfort';
-    res.status(500).json({ module, data: pickFallback(module), source: 'fallback (server error)' });
+    const safeMod = mod || (req.body && req.body.module) || 'comfort';
+    res.status(500).json({ module: safeMod, data: pickFallback(safeMod), source: 'fallback (server error)', error: String(err) });
   }
 }
