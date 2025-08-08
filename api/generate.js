@@ -1,6 +1,7 @@
 const { buildPrompt, FALLBACKS } = require('./prompts.js');
 
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_ENDPOINT = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const BANNED_KEYWORDS = ["自殘", "違法", "酒駕", "自殺"];
 
 function pickFallback(module) {
@@ -40,30 +41,42 @@ module.exports = async function handler(req, res) {
     }
 
     const prompt = buildPrompt(mod);
-    const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        safetySettings: [
+    async function callGemini(modelName) {
+      const url = `${GEMINI_ENDPOINT(modelName)}?key=${apiKey}`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          safetySettings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
             { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-        ],
-        generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.8,
-        }
-      })
-    });
+          ],
+          generationConfig: { responseMimeType: "application/json", temperature: 0.8 }
+        })
+      });
+      return resp;
+    }
+    // 先用 DEFAULT_MODEL 呼叫，不行再嘗試 8b
+    let modelUsed = DEFAULT_MODEL;
+    let response = await callGemini(modelUsed);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error:', response.status, errorText);
-      return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (api error)', error: errorText });
+      // 若配額用盡，嘗試使用 8b 模型備援（配額獨立）
+      const isQuota = response.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(errorText);
+      if (isQuota && modelUsed !== 'gemini-1.5-flash-8b') {
+        modelUsed = 'gemini-1.5-flash-8b';
+        response = await callGemini(modelUsed);
+      }
+      if (!response.ok) {
+        const err2 = await response.text();
+        return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (api error)', error: err2 });
+      }
     }
 
     const payload = await response.json();
@@ -113,7 +126,7 @@ module.exports = async function handler(req, res) {
     }
 
     // 標示明確為來自 gemini（即便是 raw）
-    res.status(200).json({ module: mod, data, source: 'gemini' });
+    res.status(200).json({ module: mod, data, source: 'gemini', model: modelUsed });
 
   } catch (err) {
     console.error('Internal server error:', err);
