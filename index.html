@@ -4,7 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Daily Modules — Bento</title>
+    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GridStack -->
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <script>
       if (localStorage.getItem('theme') === 'dark' || 
           (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -14,42 +19,38 @@
       }
     </script>
   </head>
-  <body class="h-full bg-white text-black dark:bg-black dark:text-white transition-colors">
+  <body class="h-full transition-colors">
     <div class="max-w-5xl mx-auto p-4 sm:p-8">
       <header class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-semibold">Daily Modules</h1>
         <div class="flex items-center gap-2">
           <button id="themeToggle" class="px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700 text-sm">
-            <span id="themeLabel">切換主題</span>
+            <span id="themeLabel">dark/light</span>
           </button>
-          <button id="addModule" class="px-3 py-1 rounded bg-zinc-900 text-white dark:bg-white dark:text-black text-sm">＋ 模塊</button>
+          <button id="addModule" class="px-3 py-1 rounded bg-zinc-900 text-white dark:bg-white dark:text-black text-sm">＋ module</button>
         </div>
       </header>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="bento">
-        <!-- Cards injected by script.js -->
-      </div>
+      <!-- GridStack container -->
+      <div class="grid-stack"></div>
 
-      <dialog id="modulePicker" class="rounded-lg p-0 bg-white text-black dark:bg-zinc-900 dark:text-white w-96">
+      <dialog id="modulePicker" class="rounded-lg p-0 bg-white text-black dark:bg-zinc-900 dark:text-white w-96 shadow-xl">
         <form method="dialog">
           <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
-            <h3 class="font-semibold">新增模塊</h3>
+            <h3 class="font-semibold text-lg">新增模塊</h3>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">選擇您想要新增到儀表板的模塊。</p>
           </div>
-          <div class="p-4 space-y-3">
-            <label class="flex items-center gap-3"><input type="checkbox" value="comfort" /> 每日跳脫舒適圈</label>
-            <label class="flex items-center gap-3"><input type="checkbox" value="invest" /> 每日投資小知識</label>
-            <label class="flex items-center gap-3"><input type="checkbox" value="song" /> 每日一首新歌推薦</label>
-            <label class="flex items-center gap-3"><input type="checkbox" value="jp_word" /> 每日學一個日文單字</label>
-            <label class="flex items-center gap-3"><input type="checkbox" value="en_word" /> 每日學一個英文單字</label>
+          <div id="moduleList" class="p-4 space-y-3">
+            <!-- Checkboxes will be dynamically injected -->
           </div>
           <div class="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2">
-            <button class="px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700">取消</button>
-            <button id="confirmAdd" class="px-3 py-1 rounded bg-zinc-900 text-white dark:bg-white dark:text-black">加入</button>
+            <button value="cancel" class="px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700">取消</button>
+            <button id="confirmAdd" value="default" class="px-3 py-1 rounded bg-zinc-900 text-white dark:bg-white dark:text-black">加入</button>
           </div>
         </form>
       </dialog>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+    
     <script type="module" src="./script.js"></script>
   </body>
 </html>

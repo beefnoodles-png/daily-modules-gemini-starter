@@ -1,1 +1,39 @@
-/* extra styles if needed */
+/* Define color variables for light and dark themes */
+:root {
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --widget-background-color: #f9fafb; /* bg-gray-50 */
+  --widget-border-color: #e5e7eb; /* border-gray-200 */
+}
+
+.dark {
+  --background-color: #000000;
+  --text-color: #ffffff;
+  --widget-background-color: #1f2937; /* bg-gray-800 */
+  --widget-border-color: #4b5563; /* border-gray-600 */
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* GridStack Customizations */
+.grid-stack-item-content {
+  background-color: var(--widget-background-color);
+  border: 1px solid var(--widget-border-color);
+  border-radius: 0.5rem; /* rounded-lg */
+  transition: background-color 0.3s, border-color 0.3s;
+  overflow: hidden; /* Ensures content respects the border radius */
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-resizable-handle {
+  filter: invert(0);
+}
+
+.dark .ui-resizable-handle {
+  filter: invert(1);
+}
