@@ -14,14 +14,25 @@ function containsBannedWords(text, bannedWords) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  // 簡易 GET 支援，方便用網址測試：/api/generate?module=comfort
+  let method = req.method || 'POST';
+  let incomingModule;
+  if (method === 'GET' && req.url) {
+    try {
+      const u = new URL(req.url, `http://${req.headers.host}`);
+      incomingModule = u.searchParams.get('module');
+    } catch {}
   }
 
   try {
     const { module } = req.body || {};
     if (!module || !FALLBACKS[module]) {
-      return res.status(400).json({ error: 'Invalid or missing module type' });
+      // 若 GET 傳入 query，就用它
+      if (incomingModule && FALLBACKS[incomingModule]) {
+        req.body = { module: incomingModule };
+      } else if (!module) {
+        return res.status(400).json({ error: 'Invalid or missing module type' });
+      }
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -54,7 +65,7 @@ module.exports = async function handler(req, res) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error:', response.status, errorText);
-      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (api error)' });
+      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (api error)', error: errorText });
     }
 
     const payload = await response.json();
@@ -71,7 +82,7 @@ module.exports = async function handler(req, res) {
 
     if (!text) {
       // 若 API 有回傳但抓不到 text，回傳原始 payload 片段以便偵錯
-      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (no text from gemini)' });
+      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (no text from gemini)', error: JSON.stringify(payload) });
     }
 
     // Basic content filter
