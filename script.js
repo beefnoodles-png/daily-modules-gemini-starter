@@ -84,6 +84,7 @@ function addNewWidget(type, options = {}) {
     title: moduleInfo.title,
     lastRolledISO: null,
     lastResult: null,
+    lastSource: null,
     x: options.x, // x, y, w, h will be set by GridStack
     y: options.y,
     w: options.w || moduleInfo.w,
@@ -126,6 +127,7 @@ function createWidgetHTML(mod) {
           ${state.isPro ? "重骰" : "重骰 (Pro)"}
         </button>
       </footer>
+      <div class="mt-1 text-[11px] text-zinc-500">來源：<span data-source>${mod.lastSource || '未知'}</span></div>
     </div>`;
 }
 
@@ -146,12 +148,15 @@ async function generateContent(moduleId) {
       });
       const data = await res.json();
       mod.lastResult = data.data || data;
+      mod.lastSource = data.source || '未知';
         mod.lastRolledISO = new Date().toISOString().split('T')[0];
         preEl.textContent = JSON.stringify(mod.lastResult, null, 2);
         saveModules();
         // 更新產生按鈕狀態
         const genBtn = widgetEl.querySelector(`[data-generate="${moduleId}"]`);
         if (genBtn) genBtn.disabled = true;
+      const srcEl = widgetEl.querySelector('[data-source]');
+      if (srcEl) srcEl.textContent = mod.lastSource;
 
     } catch (e) {
         preEl.textContent = '生成失敗，請稍後再試。';

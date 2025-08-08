@@ -1,4 +1,4 @@
-const FALLBACKS = {
+export const FALLBACKS = {
   comfort: [
     { title: "今日挑戰", text: "嘗試一家沒吃過的餐廳", safety: "避免危險或昂貴活動" },
     { title: "今日挑戰", text: "主動稱讚一位同事或同學", safety: "真誠、具體" },
@@ -20,7 +20,7 @@ const FALLBACKS = {
   ]
 };
 
-function buildPrompt(module) {
+export function buildPrompt(module) {
   switch (module) {
     case 'comfort':
       return `你是一個善良又務實的生活教練，生成一條今日小挑戰。
@@ -43,5 +43,3 @@ function buildPrompt(module) {
       return `產生一條簡短訊息，JSON 格式：{"text":"..."} 僅回 JSON。`;
   }
 }
-
-module.exports = { FALLBACKS, buildPrompt };
