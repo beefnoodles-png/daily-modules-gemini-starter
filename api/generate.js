@@ -1,4 +1,4 @@
-import { buildPrompt, FALLBACKS } from './prompts.js';
+const { buildPrompt, FALLBACKS } = require('./prompts.js');
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
@@ -13,7 +13,7 @@ function containsBannedWords(text, bannedWords) {
     return bannedWords.some(word => lowercasedText.includes(word));
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
