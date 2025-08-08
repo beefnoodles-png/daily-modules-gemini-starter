@@ -20,7 +20,8 @@ const MODULE_TYPES = {
 
 // Application state
 const state = {
-  isPro: JSON.parse(localStorage.getItem("isPro") ?? "false"),
+  // 預設解鎖 Pro（重骰）
+  isPro: JSON.parse(localStorage.getItem("isPro") ?? "true"),
   modules: [], // This will be populated from localStorage or defaults
 };
 
@@ -69,6 +70,8 @@ function renderModules() {
     });
   }
   updateModulePicker();
+  // 同步按鈕狀態（解鎖重骰）
+  syncProButtons();
 }
 
 function addNewWidget(type, options = {}) {
@@ -96,6 +99,8 @@ function addNewWidget(type, options = {}) {
   }
   saveModules();
   updateModulePicker();
+  // 新增後同步按鈕狀態
+  syncProButtons();
 }
 
 function createWidgetHTML(mod) {
@@ -134,13 +139,13 @@ async function generateContent(moduleId) {
     preEl.textContent = '思考中...';
 
     try {
-        const res = await fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ module: mod.type }),
-        });
-        const data = await res.json();
-        mod.lastResult = data.data || data;
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ module: mod.type }),
+      });
+      const data = await res.json();
+      mod.lastResult = data.data || data;
         mod.lastRolledISO = new Date().toISOString().split('T')[0];
         preEl.textContent = JSON.stringify(mod.lastResult, null, 2);
         saveModules();
@@ -208,6 +213,18 @@ function applyModulePickerChanges() {
   saveModules();
 }
 
+// 將所有卡片的重骰按鈕啟用、產生按鈕不受限
+function syncProButtons() {
+  if (!state.isPro) return;
+  document.querySelectorAll('.grid-stack [data-reroll]').forEach(btn => {
+    btn.disabled = false;
+    btn.textContent = '重骰';
+  });
+  document.querySelectorAll('.grid-stack [data-generate]').forEach(btn => {
+    btn.disabled = false;
+  });
+}
+
 
 // --- Event Listeners ---
 
@@ -267,4 +284,10 @@ document.querySelector('.grid-stack').addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   initializeGrid();
   renderModules();
+  // 強制保存 Pro 狀態，確保重骰功能解鎖
+  if (state.isPro !== true) {
+    state.isPro = true;
+    localStorage.setItem('isPro', 'true');
+  }
+  syncProButtons();
 });
