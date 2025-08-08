@@ -37,7 +37,8 @@ function buildPrompt(module) {
       return `提供一個 N5–N4 難度日文單字。
 輸出 JSON：{"word":"...", "reading":"...", "meaning_zh":"...", "example":"..."} 僅回 JSON。`;
     case 'en_word':
-      return `提供一個常用英文單字。
+      return `提供一個 A2–B1 難度的英文單字（避免最基礎單字，例如：good, bad, happy, beautiful, big, small, nice）。
+定義清楚詞性與中文意思，給一個簡潔例句。
 輸出 JSON：{"word":"...","pos":"...","meaning_zh":"...","example":"..."} 僅回 JSON。`;
     default:
       return `產生一條簡短訊息，JSON 格式：{"text":"..."} 僅回 JSON。`;

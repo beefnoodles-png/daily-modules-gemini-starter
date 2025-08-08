@@ -104,6 +104,24 @@ function addNewWidget(type, options = {}) {
   syncProButtons();
 }
 
+function formatResult(mod) {
+  const d = mod.lastResult || {};
+  switch (mod.type) {
+    case 'comfort':
+      return `<div class="space-y-1 text-sm"><div class="font-medium">${d.title || '今日挑戰'}</div><div>${d.text || ''}</div><div class="text-xs text-zinc-500">${d.safety ? `注意：${d.safety}` : ''}</div></div>`;
+    case 'invest':
+      return `<div class="space-y-1 text-sm"><div class="font-medium">${d.title || '今日投資小知識'}</div><div>${d.tip || ''}</div><div class="text-xs text-zinc-500">${d.example ? `例：${d.example}` : ''}${d.disclaimer ? `｜${d.disclaimer}` : ''}</div></div>`;
+    case 'song':
+      return `<div class="space-y-1 text-sm"><div class="font-medium">${d.title || '今日一首歌'}</div><div>${d.song ? `♫ ${d.song}` : ''}${d.artist ? ` — ${d.artist}` : ''}</div><div class="text-xs text-zinc-500">${d.reason || ''}</div></div>`;
+    case 'jp_word':
+      return `<div class="space-y-1 text-sm"><div class="font-medium">${d.word || ''}</div><div class="text-xs text-zinc-500">${d.reading || ''}</div><div>${d.meaning_zh || ''}</div><div class="text-xs text-zinc-500">${d.example || ''}</div></div>`;
+    case 'en_word':
+      return `<div class="space-y-1 text-sm"><div class="font-medium">${d.word || ''} <span class="text-xs text-zinc-500">${d.pos || ''}</span></div><div>${d.meaning_zh || ''}</div><div class="text-xs text-zinc-500">${d.example || ''}</div></div>`;
+    default:
+      return `<div class="text-sm whitespace-pre-wrap">${typeof d === 'string' ? d : JSON.stringify(d, null, 2)}</div>`;
+  }
+}
+
 function createWidgetHTML(mod) {
     const today = new Date().toISOString().split('T')[0];
     const canRoll = state.isPro || mod.lastRolledISO !== today;
@@ -115,9 +133,9 @@ function createWidgetHTML(mod) {
         <button data-remove-id="${mod.id}" class="text-xs text-zinc-500 hover:text-red-500 transition-colors">移除</button>
       </header>
       <main class="flex-grow min-h-0">
-        <pre class="text-xs whitespace-pre-wrap bg-zinc-100 dark:bg-zinc-900 rounded p-3 h-full overflow-auto">${
-          mod.lastResult ? JSON.stringify(mod.lastResult, null, 2) : "點擊產生按鈕來獲得今日結果。"
-        }</pre>
+        <div class="text-sm bg-zinc-100 dark:bg-zinc-900 rounded p-3 h-full overflow-auto" data-content>
+          ${mod.lastResult ? formatResult(mod) : '點擊產生按鈕來獲得今日結果。'}
+        </div>
       </main>
       <footer class="mt-2 flex items-center gap-2">
         <button data-generate="${mod.id}" class="px-3 py-1 rounded bg-zinc-900 text-white dark:bg-white dark:text-black text-sm disabled:opacity-50" ${!canRoll ? 'disabled' : ''}>
@@ -137,8 +155,8 @@ async function generateContent(moduleId) {
     if (!mod) return;
 
     const widgetEl = grid.getGridItems().find(item => item.gridstackNode.id === moduleId);
-    const preEl = widgetEl.querySelector('pre');
-    preEl.textContent = '思考中...';
+    const contentEl = widgetEl.querySelector('[data-content]');
+    if (contentEl) contentEl.textContent = '思考中...';
 
     try {
       const res = await fetch("/api/generate", {
@@ -150,7 +168,7 @@ async function generateContent(moduleId) {
       mod.lastResult = data.data || data;
       mod.lastSource = data.source || '未知';
         mod.lastRolledISO = new Date().toISOString().split('T')[0];
-        preEl.textContent = JSON.stringify(mod.lastResult, null, 2);
+        if (contentEl) contentEl.innerHTML = formatResult(mod);
         saveModules();
         // 更新產生按鈕狀態
         const genBtn = widgetEl.querySelector(`[data-generate="${moduleId}"]`);
@@ -159,7 +177,7 @@ async function generateContent(moduleId) {
       if (srcEl) srcEl.textContent = mod.lastSource;
 
     } catch (e) {
-        preEl.textContent = '生成失敗，請稍後再試。';
+        if (contentEl) contentEl.textContent = '生成失敗，請稍後再試。';
     }
 }
 
