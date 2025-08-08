@@ -58,10 +58,20 @@ export default async function handler(req, res) {
     }
 
     const payload = await response.json();
-    const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
+
+    // 如果被安全機制攔截
+    const blockReason = payload?.promptFeedback?.blockReason || payload?.promptFeedback?.blocked;
+    if (blockReason) {
+      console.warn('Gemini blocked:', blockReason);
+      return res.status(200).json({ module, data: pickFallback(module), source: `fallback (blocked: ${blockReason})` });
+    }
+
+    const parts = payload?.candidates?.[0]?.content?.parts || [];
+    const text = parts.find(p => typeof p?.text === 'string')?.text || "";
+
     if (!text) {
-        return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (empty response)' });
+      // 若 API 有回傳但抓不到 text，回傳原始 payload 片段以便偵錯
+      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (no text from gemini)' });
     }
 
     // Basic content filter
@@ -71,10 +81,31 @@ export default async function handler(req, res) {
         return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (filtered)' });
     }
 
-    // Since we requested JSON, we can assume it's valid.
-    // If not, it will be caught by the outer try-catch block.
-    const data = JSON.parse(text); 
+    // 嘗試解析 JSON；若失敗，盡量抽取 JSON 片段
+    let data;
+    try {
+      data = JSON.parse(text.trim());
+    } catch {
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) {
+        try {
+          data = JSON.parse(m[0]);
+        } catch {
+          data = { raw: text };
+        }
+      } else {
+        data = { raw: text };
+      }
+    }
 
+    // Basic content filter（若觸發則回 fallback）
+    const bannedKeywords = ["自殘", "違法", "酒駕", "自殺"];
+    if (containsBannedWords(JSON.stringify(data), bannedKeywords)) {
+      console.warn('Filtered response due to banned keywords.');
+      return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (filtered)' });
+    }
+
+    // 標示明確為來自 gemini（即便是 raw）
     res.status(200).json({ module, data, source: 'gemini' });
 
   } catch (err) {
