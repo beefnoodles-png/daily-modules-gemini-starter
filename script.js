@@ -11,11 +11,11 @@ let grid;
 
 // Available module types
 const MODULE_TYPES = {
-  comfort: { title: "每日跳脫舒適圈", w: 4, h: 2 },
-  invest: { title: "每日投資小知識", w: 4, h: 2 },
-  song: { title: "每日一首新歌推薦", w: 4, h: 2 },
-  jp_word: { title: "每日學一個日文單字", w: 4, h: 2 },
-  en_word: { title: "每日學一個英文單字", w: 4, h: 2 },
+  comfort: { title: "每日跳脫舒適圈", w: 4, h: 6 },
+  invest: { title: "每日投資小知識", w: 4, h: 6 },
+  song: { title: "每日一首新歌推薦", w: 4, h: 6 },
+  jp_word: { title: "每日學一個日文單字", w: 4, h: 6 },
+  en_word: { title: "每日學一個英文單字", w: 4, h: 6 },
 };
 
 // Application state
@@ -57,9 +57,9 @@ function renderModules() {
   if (savedModules.length === 0) {
     // Add default modules if none are saved
     const defaultLayout = [
-      { type: 'comfort', x: 0, y: 0, w: 4, h: 2 },
-      { type: 'invest', x: 4, y: 0, w: 4, h: 2 },
-      { type: 'song', x: 8, y: 0, w: 4, h: 2 },
+      { type: 'comfort', x: 0, y: 0, w: 4, h: 6 },
+      { type: 'invest', x: 4, y: 0, w: 4, h: 6 },
+      { type: 'song', x: 8, y: 0, w: 4, h: 6 },
     ];
     defaultLayout.forEach(mod => addNewWidget(mod.type, mod));
   } else {
