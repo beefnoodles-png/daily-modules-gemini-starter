@@ -1,6 +1,7 @@
 const { buildPrompt, FALLBACKS } = require('./prompts.js');
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const BANNED_KEYWORDS = ["自殘", "違法", "酒駕", "自殺"];
 
 function pickFallback(module) {
   const arr = FALLBACKS[module] || [{ text: "Have a nice day!" }];
@@ -82,11 +83,10 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (no text from gemini)', error: JSON.stringify(payload) });
     }
 
-    // Basic content filter
-    const bannedKeywords = ["自殘", "違法", "酒駕", "自殺"];
-    if (containsBannedWords(JSON.stringify(text), bannedKeywords)) {
-        console.warn('Filtered response due to banned keywords.');
-        return res.status(200).json({ module, data: pickFallback(module), source: 'fallback (filtered)' });
+    // Basic content filter on raw text
+    if (containsBannedWords(JSON.stringify(text), BANNED_KEYWORDS)) {
+        console.warn('Filtered response due to banned keywords (text).');
+        return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered-text)' });
     }
 
     // 嘗試解析 JSON；若失敗，盡量抽取 JSON 片段
@@ -107,8 +107,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Basic content filter（若觸發則回 fallback）
-    const bannedKeywords = ["自殘", "違法", "酒駕", "自殺"];
-    if (containsBannedWords(JSON.stringify(data), bannedKeywords)) {
+    if (containsBannedWords(JSON.stringify(data), BANNED_KEYWORDS)) {
       console.warn('Filtered response due to banned keywords.');
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered)' });
     }
