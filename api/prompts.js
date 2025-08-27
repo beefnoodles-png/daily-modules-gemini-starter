@@ -38,7 +38,7 @@ function buildPrompt(module) {
       return `推薦一首當代流行或獨立歌曲。
 輸出 JSON：{"title":"今日一首歌","song":"...","artist":"...","reason":"一句話理由"} 僅回 JSON。`;
     case 'jp_word':
-      return `提供一個 N5–N4 難度日文單字。
+      return `提供一個 N5–N4 難度日文單字（避免最常見單字，例如：ありがとう／おはよう／こんにちは／こんばんは／すみません）。
 輸出 JSON：{"word":"...", "reading":"...", "meaning_zh":"...", "example":"..."} 僅回 JSON。`;
     case 'en_word':
       return `提供一個 A2–B1 難度的英文單字（避免最基礎單字，例如：good, bad, happy, beautiful, big, small, nice）。

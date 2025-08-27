@@ -75,6 +75,10 @@ module.exports = async function handler(req, res) {
       }
       if (!response.ok) {
         const err2 = await response.text();
+        // 對單字類型啟用嚴格模式：不要回 fallback，直接回錯誤
+        if (mod === 'jp_word' || mod === 'en_word') {
+          return res.status(503).json({ module: mod, error: 'gemini_unavailable', detail: err2 });
+        }
         return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (api error)', error: err2 });
       }
     }
@@ -93,6 +97,9 @@ module.exports = async function handler(req, res) {
 
     if (!text) {
       // 若 API 有回傳但抓不到 text，回傳原始 payload 片段以便偵錯
+      if (mod === 'jp_word' || mod === 'en_word') {
+        return res.status(503).json({ module: mod, error: 'no_text_from_gemini', detail: JSON.stringify(payload) });
+      }
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (no text from gemini)', error: JSON.stringify(payload) });
     }
 

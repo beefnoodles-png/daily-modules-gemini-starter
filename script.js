@@ -170,6 +170,12 @@ async function generateContent(moduleId) {
           body: JSON.stringify({ module: mod.type }),
         });
         const payload = await res.json();
+        // 單字類型嚴格模式：若服務不可用，直接顯示提示不覆蓋舊結果
+        if ((mod.type === 'jp_word' || mod.type === 'en_word') && payload && payload.error) {
+          if (contentEl) contentEl.textContent = '目前 AI 配額用盡或暫時無法取得新單字，稍後再試。';
+          // 保留上一筆結果，不更新
+          return;
+        }
         data = payload;
         const candidateRaw = JSON.stringify((payload && payload.data) || payload || {});
         if (candidateRaw !== previousRaw) break;
