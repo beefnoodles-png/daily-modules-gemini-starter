@@ -19,6 +19,13 @@ const FALLBACKS = {
     { word: "大丈夫", reading: "daijōbu", meaning_zh: "沒事／沒關係", example: "大丈夫ですか。" },
     { word: "頑張る", reading: "ganbaru", meaning_zh: "加油、努力", example: "明日も頑張りましょう。" }
   ],
+  kr_word: [
+    { word: "안녕하세요", reading: "annyeonghaseyo", meaning_zh: "您好／你好", example: "안녕하세요? 만나서 반가워요." },
+    { word: "감사합니다", reading: "gamsahamnida", meaning_zh: "謝謝（正式）", example: "도와주셔서 감사합니다." },
+    { word: "괜찮아요", reading: "gwaenchanayo", meaning_zh: "沒關係／我可以", example: "괜찮아요. 걱정하지 마세요." },
+    { word: "화이팅", reading: "hwaiting", meaning_zh: "加油", example: "오늘도 화이팅!" },
+    { word: "공부하다", reading: "gongbu-hada", meaning_zh: "讀書／學習", example: "매일 한국어를 공부해요." }
+  ],
   en_word: [
     { word: "concise", pos: "adj.", meaning_zh: "簡潔的", example: "Keep your email concise." }
   ]
@@ -39,6 +46,9 @@ function buildPrompt(module) {
 輸出 JSON：{"title":"今日一首歌","song":"...","artist":"...","reason":"一句話理由"} 僅回 JSON。`;
     case 'jp_word':
       return `提供一個 N5–N4 難度日文單字（避免最常見單字，例如：ありがとう／おはよう／こんにちは／こんばんは／すみません）。
+輸出 JSON：{"word":"...", "reading":"...", "meaning_zh":"...", "example":"..."} 僅回 JSON。`;
+    case 'kr_word':
+      return `提供一個 A1–A2 難度韓文單字（避免最常見單字，例如：안녕하세요／감사합니다／미안합니다／사랑해요）。
 輸出 JSON：{"word":"...", "reading":"...", "meaning_zh":"...", "example":"..."} 僅回 JSON。`;
     case 'en_word':
       return `提供一個 A2–B1 難度的英文單字（避免最基礎單字，例如：good, bad, happy, beautiful, big, small, nice）。

@@ -15,6 +15,7 @@ const MODULE_TYPES = {
   invest: { title: "每日投資小知識", w: 4, h: 4 },
   song: { title: "每日一首新歌推薦", w: 4, h: 4 },
   jp_word: { title: "每日學一個日文單字", w: 4, h: 4 },
+  kr_word: { title: "每日學一個韓文單字", w: 4, h: 4 },
   en_word: { title: "每日學一個英文單字", w: 4, h: 4 },
 };
 
@@ -114,6 +115,8 @@ function formatResult(mod) {
     case 'song':
       return `<div class="space-y-1 text-sm"><div class="font-medium">${d.title || '今日一首歌'}</div><div>${d.song ? `♫ ${d.song}` : ''}${d.artist ? ` — ${d.artist}` : ''}</div><div class="text-xs text-zinc-500">${d.reason || ''}</div></div>`;
     case 'jp_word':
+      return `<div class="space-y-1 text-sm"><div class="font-medium">${d.word || ''}</div><div class="text-xs text-zinc-500">${d.reading || ''}</div><div>${d.meaning_zh || ''}</div><div class="text-xs text-zinc-500">${d.example || ''}</div></div>`;
+    case 'kr_word':
       return `<div class="space-y-1 text-sm"><div class="font-medium">${d.word || ''}</div><div class="text-xs text-zinc-500">${d.reading || ''}</div><div>${d.meaning_zh || ''}</div><div class="text-xs text-zinc-500">${d.example || ''}</div></div>`;
     case 'en_word':
       return `<div class="space-y-1 text-sm"><div class="font-medium">${d.word || ''} <span class="text-xs text-zinc-500">${d.pos || ''}</span></div><div>${d.meaning_zh || ''}</div><div class="text-xs text-zinc-500">${d.example || ''}</div></div>`;

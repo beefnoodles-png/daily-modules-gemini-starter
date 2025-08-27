@@ -80,7 +80,7 @@ module.exports = async function handler(req, res) {
       if (!response.ok) {
         const err2 = await response.text();
         // 對單字類型啟用嚴格模式：不要回 fallback，直接回錯誤
-        if (mod === 'jp_word' || mod === 'en_word') {
+        if (mod === 'jp_word' || mod === 'en_word' || mod === 'kr_word') {
           return res.status(503).json({ module: mod, error: 'gemini_unavailable', detail: err2 });
         }
         return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (api error)', error: err2 });
@@ -104,7 +104,7 @@ module.exports = async function handler(req, res) {
 
     if (!text) {
       // 若 API 有回傳但抓不到 text，回傳原始 payload 片段以便偵錯
-      if (mod === 'jp_word' || mod === 'en_word') {
+      if (mod === 'jp_word' || mod === 'en_word' || mod === 'kr_word') {
         return res.status(503).json({ module: mod, error: 'no_text_from_gemini', detail: JSON.stringify(payload) });
       }
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (no text from gemini)', error: JSON.stringify(payload) });
@@ -113,7 +113,7 @@ module.exports = async function handler(req, res) {
     // Basic content filter on raw text
     if (containsBannedWords(JSON.stringify(text), BANNED_KEYWORDS)) {
         console.warn('Filtered response due to banned keywords (text).');
-        if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word') {
+        if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word' || mod === 'kr_word') {
           return res.status(503).json({ module: mod, error: 'filtered_text' });
         }
         return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered-text)' });
@@ -139,7 +139,7 @@ module.exports = async function handler(req, res) {
     // Basic content filter（若觸發則回 fallback）
     if (containsBannedWords(JSON.stringify(data), BANNED_KEYWORDS)) {
       console.warn('Filtered response due to banned keywords.');
-      if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word') {
+      if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word' || mod === 'kr_word') {
         return res.status(503).json({ module: mod, error: 'filtered' });
       }
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered)' });
