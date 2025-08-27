@@ -13,7 +13,11 @@ const FALLBACKS = {
     { title: "今日一首歌", song: "As It Was", artist: "Harry Styles", reason: "輕快但帶感慨" }
   ],
   jp_word: [
-    { word: "ありがとう", reading: "arigatō", meaning_zh: "謝謝", example: "ご親切にありがとうございます。" }
+    { word: "ありがとう", reading: "arigatō", meaning_zh: "謝謝", example: "ご親切にありがとうございます。" },
+    { word: "おはよう", reading: "ohayō", meaning_zh: "早安", example: "おはようございます。" },
+    { word: "すみません", reading: "sumimasen", meaning_zh: "不好意思／對不起／謝謝", example: "すみません、道を教えてください。" },
+    { word: "大丈夫", reading: "daijōbu", meaning_zh: "沒事／沒關係", example: "大丈夫ですか。" },
+    { word: "頑張る", reading: "ganbaru", meaning_zh: "加油、努力", example: "明日も頑張りましょう。" }
   ],
   en_word: [
     { word: "concise", pos: "adj.", meaning_zh: "簡潔的", example: "Keep your email concise." }
