@@ -159,25 +159,36 @@ async function generateContent(moduleId) {
     if (contentEl) contentEl.textContent = '思考中...';
 
     try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ module: mod.type }),
-      });
-      const data = await res.json();
+      // 最多嘗試 3 次，若與上一筆完全相同，則重試（避免重骰無變化）
+      const previousRaw = JSON.stringify(mod.lastResult || {});
+      let attempts = 0;
+      let data;
+      while (attempts < 3) {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ module: mod.type }),
+        });
+        const payload = await res.json();
+        data = payload;
+        const candidateRaw = JSON.stringify((payload && payload.data) || payload || {});
+        if (candidateRaw !== previousRaw) break;
+        attempts++;
+      }
+
       mod.lastResult = data.data || data;
       mod.lastSource = data.source || '未知';
-        mod.lastRolledISO = new Date().toISOString().split('T')[0];
-        if (contentEl) contentEl.innerHTML = formatResult(mod);
-        saveModules();
-        // 更新產生按鈕狀態
-        const genBtn = widgetEl.querySelector(`[data-generate="${moduleId}"]`);
-        if (genBtn) genBtn.disabled = true;
+      mod.lastRolledISO = new Date().toISOString().split('T')[0];
+      if (contentEl) contentEl.innerHTML = formatResult(mod);
+      saveModules();
+      // 更新產生按鈕狀態
+      const genBtn = widgetEl.querySelector(`[data-generate="${moduleId}"]`);
+      if (genBtn) genBtn.disabled = true;
       const srcEl = widgetEl.querySelector('[data-source]');
       if (srcEl) srcEl.textContent = mod.lastSource;
 
     } catch (e) {
-        if (contentEl) contentEl.textContent = '生成失敗，請稍後再試。';
+      if (contentEl) contentEl.textContent = '生成失敗，請稍後再試。';
     }
 }
 
