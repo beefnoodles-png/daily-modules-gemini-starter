@@ -173,10 +173,12 @@ async function generateContent(moduleId) {
           body: JSON.stringify({ module: mod.type }),
         });
         const payload = await res.json();
-        // 單字類型嚴格模式：若服務不可用，直接顯示提示不覆蓋舊結果
-        if ((mod.type === 'jp_word' || mod.type === 'en_word') && payload && payload.error) {
-          if (contentEl) contentEl.textContent = '目前 AI 配額用盡或暫時無法取得新單字，稍後再試。';
-          // 保留上一筆結果，不更新
+        // 若 API 失敗（有 error），顯示提示，不覆蓋舊結果
+        if (payload && payload.error) {
+          if (contentEl) contentEl.textContent = '請稍後嘗試';
+          // 更新來源顯示（非 gemini）
+          const srcElErr = widgetEl.querySelector('[data-source]');
+          if (srcElErr) srcElErr.textContent = payload.source || '未知';
           return;
         }
         data = payload;
@@ -185,12 +187,13 @@ async function generateContent(moduleId) {
         attempts++;
       }
 
-      // 僅當來源為 gemini 時，才更新單字模塊；其他模塊依舊可接受 fallback
-      const isWordModule = (mod.type === 'jp_word' || mod.type === 'en_word');
+      // 若來源不是 gemini，一律顯示提示，不覆蓋舊內容
       const source = data.source || '未知';
-      if (isWordModule && source !== 'gemini') {
-        if (contentEl) contentEl.textContent = '目前 AI 暫時無法取得新單字，稍後再試。';
-        return; // 不覆蓋舊結果
+      if (source !== 'gemini') {
+        if (contentEl) contentEl.textContent = '請稍後嘗試';
+        const srcElInfo = widgetEl.querySelector('[data-source]');
+        if (srcElInfo) srcElInfo.textContent = source;
+        return;
       }
       mod.lastResult = data.data || data;
       mod.lastSource = source;
@@ -204,7 +207,7 @@ async function generateContent(moduleId) {
       if (srcEl) srcEl.textContent = mod.lastSource;
 
     } catch (e) {
-      if (contentEl) contentEl.textContent = '生成失敗，請稍後再試。';
+      if (contentEl) contentEl.textContent = '請稍後嘗試';
     }
 }
 
