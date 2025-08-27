@@ -182,8 +182,15 @@ async function generateContent(moduleId) {
         attempts++;
       }
 
+      // 僅當來源為 gemini 時，才更新單字模塊；其他模塊依舊可接受 fallback
+      const isWordModule = (mod.type === 'jp_word' || mod.type === 'en_word');
+      const source = data.source || '未知';
+      if (isWordModule && source !== 'gemini') {
+        if (contentEl) contentEl.textContent = '目前 AI 暫時無法取得新單字，稍後再試。';
+        return; // 不覆蓋舊結果
+      }
       mod.lastResult = data.data || data;
-      mod.lastSource = data.source || '未知';
+      mod.lastSource = source;
       mod.lastRolledISO = new Date().toISOString().split('T')[0];
       if (contentEl) contentEl.innerHTML = formatResult(mod);
       saveModules();

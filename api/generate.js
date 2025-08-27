@@ -1,6 +1,7 @@
 const { buildPrompt, FALLBACKS } = require('./prompts.js');
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const STRICT_AI_ONLY = String(process.env.STRICT_AI_ONLY || '').toLowerCase() === 'true';
 const GEMINI_ENDPOINT = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const BANNED_KEYWORDS = ["自殘", "違法", "酒駕", "自殺"];
 
@@ -37,6 +38,9 @@ module.exports = async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.warn('GEMINI_API_KEY is not set. Using fallback data.');
+      if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word') {
+        return res.status(503).json({ module: mod, error: 'no_api_key' });
+      }
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (no key)' });
     }
 
@@ -89,6 +93,9 @@ module.exports = async function handler(req, res) {
     const blockReason = payload?.promptFeedback?.blockReason || payload?.promptFeedback?.blocked;
     if (blockReason) {
       console.warn('Gemini blocked:', blockReason);
+      if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word') {
+        return res.status(503).json({ module: mod, error: 'blocked', detail: String(blockReason) });
+      }
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: `fallback (blocked: ${blockReason})` });
     }
 
@@ -106,6 +113,9 @@ module.exports = async function handler(req, res) {
     // Basic content filter on raw text
     if (containsBannedWords(JSON.stringify(text), BANNED_KEYWORDS)) {
         console.warn('Filtered response due to banned keywords (text).');
+        if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word') {
+          return res.status(503).json({ module: mod, error: 'filtered_text' });
+        }
         return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered-text)' });
     }
 
@@ -129,6 +139,9 @@ module.exports = async function handler(req, res) {
     // Basic content filter（若觸發則回 fallback）
     if (containsBannedWords(JSON.stringify(data), BANNED_KEYWORDS)) {
       console.warn('Filtered response due to banned keywords.');
+      if (STRICT_AI_ONLY || mod === 'jp_word' || mod === 'en_word') {
+        return res.status(503).json({ module: mod, error: 'filtered' });
+      }
       return res.status(200).json({ module: mod, data: pickFallback(mod), source: 'fallback (filtered)' });
     }
 
